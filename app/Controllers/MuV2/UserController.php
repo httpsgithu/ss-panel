@@ -13,14 +13,34 @@ use App\Utils\Tools;
 
 class UserController extends BaseController
 {
-    // User List
+    /**
+     * @SWG\Get(
+     *     path="/mu/users",
+     *     summary="Get Users",
+     *     tags={"Mu"},
+     *     description="Get users list",
+     *     produces={ "application/json"},
+     *     @SWG\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @SWG\Schema(
+     *             type="array",
+     *             @SWG\Items(ref="#/definitions/MuUser")
+     *         ),
+     *     ),
+     *     @SWG\Response(
+     *         response="400",
+     *         description="Invalid tag value",
+     *     ),
+     * )
+     */
     public function index($request, $response, $args)
     {
         $users = User::all();
         $res = [
-            "msg" => "ok",
-            "data" => $users
+            'data' => $users,
         ];
+
         return $this->echoJson($response, $res);
     }
 
@@ -41,8 +61,9 @@ class UserController extends BaseController
         $user->d = $user->d + ($d * $rate);
         if (!$user->save()) {
             $res = [
-                "msg" => "update failed",
+                'msg' => 'update failed',
             ];
+
             return $this->echoJson($response, $res, 400);
         }
         // log
@@ -58,19 +79,21 @@ class UserController extends BaseController
         $traffic->save();
 
         $res = [
-            "ret" => 1,
-            "msg" => "ok",
+            'ret' => 1,
+            'msg' => 'ok',
         ];
-        if (Config::get('log_traffic_dynamodb')) {
+
+        // @todo
+        $saveToDynamo  = false;
+        if ($saveToDynamo) {
             try {
                 $client = new DynamoTrafficLog();
                 $id = $client->store($u, $d, $nodeId, $id, $totalTraffic, $rate);
-                $res["id"] = $id;
+                $res['id'] = $id;
             } catch (\Exception $e) {
-                $res["msg"] = $e->getMessage();
-                Logger::error($e->getMessage());
             }
         }
+
         return $this->echoJson($response, $res);
     }
 }
